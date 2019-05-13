@@ -4,6 +4,7 @@ import scraperwiki
 import pandas as pd
 import re
 import json
+from time import sleep
 
 def scrape_wiki_table(url):
 
@@ -19,11 +20,14 @@ def scrape_wiki_table(url):
 
 	for table in tables:
 		th = table.find('th')
+		count_th = len(table.find_all('th'))
 		if th is None:
 			pass
 		else:
 			th_text = th.text
-			if th_text.startswith("Entered"):
+#			print(str(table))
+#			print(th_text)
+			if count_th >= 7 and th_text.startswith("Entered"):			#REQUIRED TO GET RIGHT TABLE
 				df = pd.read_html(str(table))[0]
 				df.columns = ['date_entered','weeks_in_top_10','single','artist','peak','date_peak_reached','weeks_at_peak']
 
@@ -41,7 +45,7 @@ def scrape_wiki_table(url):
 
 				for tuple in df.itertuples():
 					data = {}
-					data.update([ ('id', str(year) + str(getattr(tuple, "Index"))), ('entered_week_ending', getattr(tuple, "date_entered")), ('weeks_in_top_10', getattr(tuple, 'weeks_in_top_10')), ('single_title', getattr(tuple, 'single')), ('artist', getattr(tuple, 'artist')), ('peak', getattr(tuple, 'peak')), ('peak_reached_week_ending', getattr(tuple, 'date_peak_reached')), ('weeks_at_peak', getattr(tuple, 'weeks_at_peak'))])
+					data.update([ ('id', str(year) + str(getattr(tuple, "Index"))), ('year', year), ('entered_week_ending', getattr(tuple, "date_entered")), ('weeks_in_top_10', getattr(tuple, 'weeks_in_top_10')), ('single_title', getattr(tuple, 'single')), ('artist', getattr(tuple, 'artist')), ('peak', getattr(tuple, 'peak')), ('peak_reached_week_ending', getattr(tuple, 'date_peak_reached')), ('weeks_at_peak', getattr(tuple, 'weeks_at_peak'))])
 					scraperwiki.sqlite.save(unique_keys = ['id'], data = data, table_name="swdata")
 
 				print("Year: " + str(year))
@@ -56,5 +60,7 @@ def scrape_all_lists():
 			url = 'https://en.wikipedia.org/wiki/' + item["listLabel"]
 			print(url)
 			scrape_wiki_table(url)
+			sleep(1)
 
 scrape_all_lists()
+#scrape_wiki_table('https://en.wikipedia.org/wiki/List_of_UK_top-ten_singles_in_1991')
